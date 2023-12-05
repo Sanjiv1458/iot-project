@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Booking Confirmation - My Car Parking System</title>
+	<!-- Bootstrap CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+
+<body>
+	<!-- Navigation bar -->
+	<nav class="navbar navbar-expand-md navbar-light bg-light">
+		<a class="navbar-brand" href="/home"><i class="fas fa-car"></i> My Car Parking System</a>
+		<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+			<span class="navbar-toggler-icon"></span>
+		</button>
+	</nav>
+
+	<!-- Main section -->
+	<div class="container mt-5">
+		<div class="row">
+			<div class="col-md-12 text-center">
+				<h1>Booking Confirmed</h1>
+				<p>Your parking slot has been reserved successfully.</p>
+				<hr>
+				<h4>Booking Details:</h4>
+				<p>Parking Slot Number: <strong>#<%= booking.slotId %></strong></p>
+				<p>Booking Time: <strong>
+						<%= booking.startTime.toLocaleString() %> to <%= booking.endTime.toLocaleString() %>
+					</strong></p>
+				<p>User Name: <strong>
+						<%= user.fname %>
+							<%= user.lname %>
+					</strong></p>
+				<hr>
+				<p>Thank you for using our service. Have a nice day!</p>
+				<a href="/home" class="btn btn-primary">Back to Dashboard</a>
+			</div>
+		</div>
+	</div>
+
+	<!-- Bootstrap JS -->
+	<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.min.js"></script>
+</body>
+
+</html>

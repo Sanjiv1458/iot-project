@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>My Car Parking System</title>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.1.slim.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+  <script src="https://checkout.razorpay.com/v2/checkout.js"></script>
+  <style>
+    .availability {
+      cursor: pointer;
+    }
+
+    .card {
+      width: 100%;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .card:hover {
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    .card-header {
+      background-color: #f8f9fa;
+      font-weight: bold;
+      font-size: 1rem;
+      text-align: center;
+    }
+
+    .card-body {
+      font-size: 1rem;
+      font-weight: bold;
+    }
+
+    .card-available {
+      background-color: #9efe78;
+    }
+
+    .card-occupied {
+      background-color: #ff7984;
+    }
+
+    .card-booked {
+      background-color: #79a6ff;
+    }
+
+    .booking-form {
+      margin-top: 30px;
+    }
+
+    /* Responsive Styles */
+    @media (max-width: 767px) {
+      .card {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <nav class="navbar navbar-expand-md navbar-light bg-light">
+    <a class="navbar-brand" href="/home"><i class="fas fa-car"></i> My Car Parking System</a>
+  </nav>
+  <div class="container">
+    <h1 class="my-5 text-center">Live Car Parking Status</h1>
+    <!-- Wrap both the sensor cards and booking form in the same row -->
+    <div class="row">
+      <div class="text-center col-md-6" id="sensor-list"></div>
+      <div class="col-md-6 mt-5 booking-form">
+        <div class="card">
+          <div class="card-header">
+            <h4>Book a Parking Slot</h4>
+          </div>
+          <div class="card-body">
+            <form id="booking-form" action="" method="POST">
+              <% if (error) { %>
+                <div class="alert alert-danger" role="alert">
+                  <%= error %>
+                </div>
+                <% } %>
+                  <div class="form-group">
+                    <label for="car-number"><i class="fas fa-car"></i> Car Number</label>
+                    <input type="text" class="form-control" id="car-number" name="car-number" placeholder="Enter car number" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="parking-slot"><i class="fas fa-map-marker-alt"></i> Parking Slots</label>
+                    <select class="form-control" id="parking-slot" name="parking-slot" required disabled>
+                      <option value="">Select a parking Slot on clicking the Available Status</option>
+                      <option value="1">Slot 1</option>
+                      <option value="2">Slot 2</option>
+                      <option value="3">Slot 3</option>
+                      <option value="4">Slot 4</option>
+                      <option value="5">Slot 5</option>
+                      <option value="6">Slot 6</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="start-time"><i class="far fa-clock"></i> Start Date and Time:</label>
+                    <input type="datetime-local" class="form-control" id="start-time" name="start-time" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="end-time"><i class="far fa-clock"></i> End Date and Time:</label>
+                    <input type="datetime-local" class="form-control" id="end-time" name="end-time" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="rental-charges">Rental Charges:</label>
+                    <input type="number" class="form-control" id="rental-charges" placeholder="click for rental-charges" readonly>
+                  </div>
+                  <button type="button" class="btn btn-primary btn-block" id="pay-button">
+                    <i class="fas fa-calendar-check"></i> Book Slot
+                  </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    $(document).ready(function () {
+      const socket = io();
+      socket.on('sensorData', function (data) {
+        const sensorList = $("#sensor-list");
+        sensorList.html("");
+        const sensorData = data.split(",");
+        for (let i = 0; i < sensorData.length; i++) {
+          const cardAvailability = $("<div></div>");
+          cardAvailability.addClass("card availability");
+          cardAvailability.attr("data-slot", i + 1);
+          const card = $("<div></div>");
+          card.addClass("card col-md-12");
+          if (sensorData[i] === "1") {
+            card.addClass("card-available");
+          } else if (sensorData[i] === "0") {
+            card.addClass("card-occupied");
+          } else if (sensorData[i] === "2") {
+            card.addClass("card-booked");
+          }
+          const cardHeader = $("<div></div>");
+          cardHeader.addClass("card-header");
+          cardHeader.text("Sensor " + (i + 1));
+          const cardBody = $("<div></div>");
+          cardBody.addClass("card-body");
+          if (sensorData[i] === "1") {
+            cardBody.text("Available");
+          } else if (sensorData[i] === "0") {
+            cardBody.text("Occupied");
+          } else if (sensorData[i] === "2") {
+            cardBody.text("Booked");
+          }
+          card.append(cardHeader);
+          card.append(cardBody);
+          cardAvailability.append(card);
+          sensorList.append(cardAvailability);
+        }
+      })
+
+      $('#sensor-list').on('click', '.card.availability', function (event) {
+        event.preventDefault();
+
+        var parkingSlotNo = $(this).data('slot');
+
+        if ($(this).find('.card-body').text() === "Available") {
+          $("#parking-slot").val(parkingSlotNo);
+          $(".btn-primary").attr('disabled', false);
+        } else {
+          $(".btn-primary").attr('disabled', true);
+          alert("Parking Space no." + parkingSlotNo + " Not Available");
+        }
+      });
+
+      $("#start-time, #end-time").on('change', function () {
+        calculateRentalCharges();
+      });
+      function calculateRentalCharges() {
+        const RENT_PER_HOUR = 50;
+        const startDate = new Date($('#start-time').val());
+        const endDate = new Date($('#end-time').val());
+        const diffInMs = endDate - startDate;
+        const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+
+        if (diffInHours < 0) {
+          alert('Invalid input: exit time should be after entry time.');
+          $('#rental-charges').val('');
+        } else {
+          const rentalCharges = diffInHours * RENT_PER_HOUR;
+          $('#rental-charges').val(rentalCharges);
+        }
+      }
+
+      async function getKey() {
+        try {
+          const response = await fetch('/payment/get-key', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          const data = await response.json();
+          return data.key;
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      async function userData() {
+        try {
+          const response = await fetch('/user/user-data', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      async function createOrder() {
+        const rentalCharges = Number($('#rental-charges').val());
+        const carId = $('#car-number').val();
+        const slotId = $('#parking-slot').val();
+        const startTime = $('#start-time').val();
+        const endTime = $('#end-time').val();
+
+        console.log('Rental Charges:', rentalCharges);
+        console.log('Car ID:', carId);
+
+        if (isNaN(rentalCharges) || rentalCharges < 50) {
+          alert('Invalid rental charges. Please enter a valid amount.');
+          return null;
+        }
+
+        const amountInPaise = Math.round(rentalCharges * 100); // Convert to integer paise
+
+        const response = await fetch('/payment/create-payment', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            amount: amountInPaise,
+            carId: carId,
+            slotId: slotId,
+            startTime: startTime,
+            endTime: endTime,
+          }),
+        });
+
+        const data = await response.json();
+
+        return data.id;
+      }
+
+      async function initializeRazorpay() {
+        document.getElementById('pay-button').onclick = async function (e) {
+          try {
+            const order_id = await createOrder();
+            const key = await getKey();
+            const user = await userData();
+
+            if (!order_id || !key) {
+              throw new Error('Failed to retrieve order ID or key.');
+            }
+
+            var options = {
+              key: key,
+              name: 'Parking System',
+              description: 'Book Your Slot',
+              image: "https://w7.pngwing.com/pngs/42/901/png-transparent-blue-car-illustration-car-park-gatwick-airport-south-terminal-long-stay-parking-cophall-parking-gatwick-better-choice-parking-directions-cophall-parking-gatwick-miscellaneous-logo-parking.png",
+              order_id: order_id,
+              callback_url: "http://localhost:3000/payment/verify-payment",
+              prefill: {
+                name: user.fname,
+                email: user.email,
+                contact: user.mobile
+              },
+              theme: {
+                color: "#3399cc"
+              }
+            };
+
+            // Initialize the Razorpay payment form
+            var rzp = new Razorpay(options);
+
+            // Open the Razorpay form
+            rzp.open();
+            e.preventDefault();
+          } catch (error) {
+            console.error('Error initializing Razorpay:', error);
+          }
+        };
+      }
+
+      // Initial call to set up event listeners
+      initializeRazorpay();
+    });
+  </script>
+</body>
+
+</html>

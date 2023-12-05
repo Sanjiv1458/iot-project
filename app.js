@@ -1,0 +1,75 @@
+import express from 'express';
+import session from 'express-session';
+import http from 'http';
+import dotenv from 'dotenv';
+import { Server as SocketIO } from 'socket.io';
+import passport from './config/passport.js';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import authRoutes from './routes/auth.js';
+import userRoutes from './routes/user.js';
+import adminRoutes from './routes/admin.js';
+import paymentRoutes from './routes/payment.js';
+import { getIndex } from './controllers/sensorController.js';
+import db from './config/database.js';
+
+dotenv.config();
+
+const app = express();
+const server = http.createServer(app);
+const io = new SocketIO(server);
+
+app.set('io', io);
+app.set('view engine', 'ejs');
+
+// Set up middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: true,
+  saveUninitialized: true
+}));
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Allow specific origins
+const allowedOrigins = ['http://localhost:3000', 'https://frontenddomain.com'];
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+}));
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).render('error', { message: 'Something went wrong!' });
+});
+
+// Set up static file serving
+app.use(express.static(new URL('./public', import.meta.url).pathname));
+app.use(express.static(new URL('./public/uploads', import.meta.url).pathname));
+
+// Set up routes
+app.use('/', authRoutes);
+app.use('/admin', adminRoutes);
+app.use('/user', userRoutes);
+app.use('/payment', paymentRoutes);
+app.use('/slot-status', getIndex(io));
+
+// Database Connection
+db.on('open', () => {
+  console.log('Database connected');
+});
+
+// Port connection
+const PORT = process.env.PORT || 3000;
+// Start the server
+server.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
+});
