@@ -1,5 +1,8 @@
 import express from 'express';
 import session from 'express-session';
+import rateLimit from 'express-rate-limit';
+import compression from 'compression';
+import morgan from 'morgan';
 import http from 'http';
 import dotenv from 'dotenv';
 import { Server as SocketIO } from 'socket.io';
@@ -27,6 +30,13 @@ app.set('view engine', 'ejs');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(compression());
+const logFormat = process.env.NODE_ENV === 'production' ? 'combined' : 'dev';
+app.use(morgan(logFormat));
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+}));
 
 // Set up MongoDB session store
 const MongoDBStoreSession = MongoDBStore(session);
