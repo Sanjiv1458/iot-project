@@ -12,6 +12,7 @@ import adminRoutes from './routes/admin.js';
 import paymentRoutes from './routes/payment.js';
 import { getIndex } from './controllers/sensorController.js';
 import db from './config/database.js';
+import MongoDBStore from 'connect-mongodb-session';
 
 dotenv.config();
 
@@ -26,26 +27,46 @@ app.set('view engine', 'ejs');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: true,
-  saveUninitialized: true
-}));
+
+// Set up MongoDB session store
+const MongoDBStoreSession = MongoDBStore(session);
+const store = new MongoDBStoreSession({
+  uri: process.env.MONGODB_URI || 'mongodb://localhost/your-database-name',
+  collection: 'sessions',
+  expires: 1000 * 60 * 60 * 24,
+  connectionOptions: {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  },
+});
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: true,
+    saveUninitialized: true,
+    store: store,
+  })
+);
+
 app.use(passport.initialize());
 app.use(passport.session());
 
 // Allow specific origins
 const allowedOrigins = ['http://localhost:3000', 'https://frontenddomain.com'];
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+  })
+);
+
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).render('error', { message: 'Something went wrong!' });
@@ -69,6 +90,7 @@ db.on('open', () => {
 
 // Port connection
 const PORT = process.env.PORT || 3000;
+
 // Start the server
 server.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
