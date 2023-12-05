@@ -31,7 +31,7 @@ app.use(cookieParser());
 // Set up MongoDB session store
 const MongoDBStoreSession = MongoDBStore(session);
 const store = new MongoDBStoreSession({
-  uri: process.env.MONGODB_URI || 'mongodb://localhost/your-database-name',
+  uri: process.env.MONGODB_URI,
   collection: 'sessions',
   expires: 1000 * 60 * 60 * 24,
   connectionOptions: {
@@ -53,7 +53,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Allow specific origins
-const allowedOrigins = ['http://localhost:3000', 'https://frontenddomain.com'];
+const allowedOrigins = ['http://localhost:3000', 'https://iot-project-p14l.onrender.com'];
 app.use(
   cors({
     origin: function (origin, callback) {
