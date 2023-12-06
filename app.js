@@ -10,11 +10,11 @@ import { Server as SocketIO } from 'socket.io';
 import passport from './config/passport.js';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import authRoutes from './src/routes/auth.js';
-import userRoutes from './src/routes/user.js';
-import adminRoutes from './src/routes/admin.js';
-import paymentRoutes from './src/routes/payment.js';
-import { getIndex } from './src/controllers/sensorController.js';
+import authRoutes from './routes/auth.js';
+import userRoutes from './routes/user.js';
+import adminRoutes from './routes/admin.js';
+import paymentRoutes from './routes/payment.js';
+import { getIndex } from './controllers/sensorController.js';
 import db from './src/config/database.js';
 
 dotenv.config();
