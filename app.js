@@ -1,6 +1,10 @@
 import express from 'express';
 import session from 'express-session';
 import http from 'http';
+import MongoDBStore from 'connect-mongodb-session';
+import rateLimit from 'express-rate-limit';
+import morgan from 'morgan';
+import compression from 'compression';
 import dotenv from 'dotenv';
 import { Server as SocketIO } from 'socket.io';
 import passport from './src/config/passport.js';
@@ -12,7 +16,6 @@ import adminRoutes from './src/routes/admin.js';
 import paymentRoutes from './src/routes/payment.js';
 import { getIndex } from './src/controllers/sensorController.js';
 import db from './src/config/database.js';
-import MongoDBStore from 'connect-mongodb-session';
 
 dotenv.config();
 
@@ -66,6 +69,18 @@ app.use(
     credentials: true,
   })
 );
+
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+}));
+
+// Morgan Logging
+const logFormat = process.env.NODE_ENV === 'production' ? 'combined' : 'dev';
+app.use(morgan(logFormat));
+
+// Compression
+app.use(compression());
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
