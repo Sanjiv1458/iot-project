@@ -7,7 +7,7 @@ import morgan from 'morgan';
 import compression from 'compression';
 import dotenv from 'dotenv';
 import { Server as SocketIO } from 'socket.io';
-import passport from './src/config/passport.js';
+import passport from './config/passport.js';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import authRoutes from './src/routes/auth.js';
