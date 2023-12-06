@@ -15,7 +15,7 @@ import userRoutes from './routes/user.js';
 import adminRoutes from './routes/admin.js';
 import paymentRoutes from './routes/payment.js';
 import { getIndex } from './controllers/sensorController.js';
-import db from './src/config/database.js';
+import db from './config/database.js';
 
 dotenv.config();
 
