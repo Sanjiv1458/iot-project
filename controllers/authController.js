@@ -67,7 +67,7 @@ class AuthController {
                   }
                 });
               } catch (error) {
-                return res.render("register", { error: error.message });
+                return res.render("sign-up", { error: error.message });
               }
             } else {
               res.render("sign-up", { error: "Password and Confirm Password doesn't match" })
