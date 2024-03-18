@@ -1,7 +1,7 @@
 import User from "../models/user.js";
 import Booking from "../models/booking.js";
-import upload from '../config/upload.js';
 import Message from "../models/message.js";
+import { deleteFromCloudinary } from "../config/cloudinary.js"
 
 class userController {
   static homePage = async (req, res) => {
@@ -64,35 +64,47 @@ class userController {
     }
   }
   static updateProfile = async (req, res) => {
-    upload.single('avatar')(req, res, async function (err) {
-      if (err) {
-        return res.render("update-profile", { error: err.message });
-      } else {
-        const { fname, lname, email, mobile, password, confirm_password } = req.body;
-        let photo;
-        if (req.file) {
-          photo = req.file.filename;
-        } else {
-          photo = req.user.photo;
-        }
-        if (password === confirm_password) {
-          try {
-            const updatedData = { fname: fname, lname: lname, email: email, mobile: mobile, password: password, photo: photo };
-            const user = await User.findOne({ email: email });
-            if (!user) {
-              res.render("update-profile", { error: "Email already in used" });
-            } else {
-              const updatedUser = await User.findByIdAndUpdate(req.user.id, updatedData, { new: true });
-              res.render("profile", { user: updatedUser });
-            }
-          } catch (error) {
-            return res.render("update-profile", { error: error.message });
-          }
-        } else {
-          res.render("update-profile", { error: "Password and Confirm Password doesn't match" })
+    const { fname, lname, email, mobile, password, confirm_password } = req.body;
+    let photoUrl = req.user.photo; // Initialize with current photo URL
+
+    if (req.file) {
+      const cloudinaryResponse = await uploadOnCloudinary(req.file.path);
+      if (cloudinaryResponse && cloudinaryResponse.secure_url) {
+        photoUrl = cloudinaryResponse.secure_url;
+        if (req.user.photo) {
+          // Delete previous photo from Cloudinary
+          await deleteFromCloudinary(req.user.photo);
         }
       }
-    });
+    }
+
+    if (password === confirm_password) {
+      try {
+        const updatedData = {
+          fname: fname,
+          lname: lname,
+          email: email,
+          mobile: mobile,
+          password: password,
+          photo: photoUrl // Update with Cloudinary URL
+        };
+
+        // Check if email is already in use by another user
+        const userWithEmail = await User.findOne({ email: email });
+        if (userWithEmail && userWithEmail.id !== req.user.id) {
+          return res.render("update-profile", { error: "Email already in use" });
+        }
+
+        // Update the user's profile
+        const updatedUser = await User.findByIdAndUpdate(req.user.id, updatedData, { new: true });
+
+        res.render("profile", { user: updatedUser });
+      } catch (error) {
+        return res.render("update-profile", { error: error.message });
+      }
+    } else {
+      res.render("update-profile", { error: "Password and Confirm Password don't match" });
+    }
   }
   static getallBookings = async (req, res) => {
     try {
