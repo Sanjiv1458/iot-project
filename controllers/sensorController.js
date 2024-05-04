@@ -35,7 +35,7 @@ export const getIndex = (io) => (req, res) => {
       });
     });
 
-    res.render("sensor");
+    res.render("book-slot", { error: null });
   } catch (error) {
     res.status(500).send(error);
   }
