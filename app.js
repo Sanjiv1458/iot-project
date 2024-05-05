@@ -56,7 +56,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Allow specific origins
-const allowedOrigins = ['http://localhost:3000', 'https://iot-project-p14l.onrender.com'];
+const allowedOrigins = ['http://localhost:3000', 'https://iot-project-a3i4.onrender.com'];
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -96,7 +96,7 @@ app.use('/', authRoutes);
 app.use('/admin', adminRoutes);
 app.use('/user', userRoutes);
 app.use('/payment', paymentRoutes);
-app.use('/slot-status', getIndex(io));
+app.use('/book-slot', getIndex(io));
 
 // Database Connection
 db.on('open', () => {

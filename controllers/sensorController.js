@@ -22,6 +22,7 @@ export const getIndex = (io) => (req, res) => {
       console.log("WebSocket connected");
       // mqttClient.subscribe(mqtt_topic);
       socket.emit("sensorData", testSensorData);
+      // sendCombinedData(socket);
 
       // mqttClient.on("message", function (topic, message) {
       //   if (topic === mqtt_topic) {
@@ -41,16 +42,27 @@ export const getIndex = (io) => (req, res) => {
   }
 };
 
+const sendCombinedData = async (socket) => {
+  const sensorData = testSensorData.split(",");
 
-// import Booking from '../models/booking.js';
-// await Booking.find({ status: "Booked" }, { slotId: 1, _id: 0 }, function (err, bookings) {
-//   if (err) {
-//     res.status(500).send(err.message);
-//   } else {
-//     const bookedSlotIds = bookings.map((booking) => booking.slotId);
-//     for (let i = 0; i < bookedSlotIds.length; i++) {
-//       sensorData[bookedSlotIds[i] - 1] = 3;
-//     }
-//   }
-// });
-// socket.emit("sensorData", sensorData);
+  try {
+    // Fetch booking status from the database
+    const bookings = await Booking.find({});
+
+    const bookingStatus = {};
+    bookings.forEach((booking) => {
+      bookingStatus[booking.slotId] = booking.status;
+    });
+
+    // Combine sensor data with booking status
+    const combinedData = {
+      sensorData: sensorData,
+      bookingStatus: bookingStatus
+    };
+
+    // Send the combined data to the frontend
+    socket.emit("combinedData", combinedData);
+  } catch (err) {
+    console.error("Error fetching booking data:", err);
+  }
+};
